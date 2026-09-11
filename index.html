@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>教學進度紀錄</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="教學進度">
+<meta name="theme-color" content="#254B6B">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<style>
+  :root{--paper:#F5F6F2;--ink:#1E2A3A;--ink2:#5B6675;--line:#D9DDD6;--board:#254B6B;--chalk:#fff;--hw:#B4572A;--hwbg:#FBEDE4;--ok:#2F7A5B;--okbg:#E6F2EC}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;font-size:16px;line-height:1.5}
+  header{position:sticky;top:0;background:var(--paper);z-index:5;border-bottom:1px solid var(--line)}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px}
+  .top h1{font-size:18px;font-weight:600;margin:0}
+  .top button{background:none;border:0;color:var(--ink2);font-size:14px;padding:4px 0;font-family:inherit}
+  .views{display:flex;padding:0 16px 10px;gap:6px}
+  .views button{flex:1;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px;font:inherit;font-size:15px;font-weight:600;color:var(--ink)}
+  .views button.on{background:var(--board);color:#fff;border-color:var(--board)}
+  main{padding:14px 16px 70px;max-width:640px;margin:0 auto}
+  button{font-family:inherit}
+
+  /* today view */
+  .daynav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .daynav .d{font-size:20px;font-weight:700}
+  .daynav .d small{font-weight:400;color:var(--ink2);font-size:14px;margin-left:8px}
+  .daynav button{border:1px solid var(--line);background:#fff;border-radius:10px;width:40px;height:36px;font-size:18px;color:var(--ink)}
+  .daynav .today{width:auto;padding:0 12px;font-size:13px}
+  .lesson{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden}
+  .lesson.done{border-color:var(--ok)}
+  .lh{display:grid;grid-template-columns:52px 1fr auto;gap:10px;padding:12px 14px;align-items:center}
+  .lh .p{font-size:12px;color:var(--ink2);line-height:1.25}
+  .lh .p b{display:block;font-size:20px;color:var(--ink);font-weight:700}
+  .lh .c{font-size:18px;font-weight:700}
+  .lh .c small{font-weight:400;color:var(--ink2);font-size:13px;margin-left:6px}
+  .lh .st{font-size:12px;color:var(--ok);background:var(--okbg);border-radius:999px;padding:3px 9px}
+  .last{margin:0 14px 10px;padding:10px 12px;background:var(--paper);border-radius:10px;font-size:14px}
+  .last .ago{color:var(--ink2);font-size:13px}
+  .last .pg{font-weight:600}
+  .last .hwl{color:var(--hw)}
+  .last.none{color:var(--ink2)}
+  .lf{padding:0 14px 14px}
+  .lf input,.lf textarea{width:100%;font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);margin-top:6px}
+  .lf input:focus,.lf textarea:focus{outline:2px solid var(--board);outline-offset:1px;border-color:var(--board)}
+  .lf textarea{min-height:42px;resize:vertical}
+  .r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .r2>*{min-width:0}
+  .lf input[type=date]{-webkit-appearance:none;appearance:none;min-height:41px}
+  .lf .act{display:flex;gap:8px;margin-top:10px;align-items:center}
+  .lf .save{flex:1;padding:11px;border:0;border-radius:9px;background:var(--board);color:#fff;font-size:15px;font-weight:600}
+  .lf .clr{border:0;background:none;color:var(--ink2);font-size:13px;text-decoration:underline;padding:8px}
+  .lf .msg{font-size:13px;color:var(--ok);min-height:16px;margin-top:6px}
+  .free{color:var(--ink2);padding:30px 0;text-align:center}
+
+  /* class view */
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding:0 0 12px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:15px;color:var(--ink);font-weight:600}
+  .tab.on{background:var(--board);color:#fff;border-color:var(--board)}
+  .tab small{font-weight:400;opacity:.65;margin-left:5px;font-size:12px}
+  .now{background:var(--board);color:#fff;border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .now .cls{font-size:13px;opacity:.75}
+  .now .page{font-size:34px;font-weight:700;line-height:1.15;margin:4px 0 2px}
+  .now .hw{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);font-size:15px}
+  .now .next{font-size:13px;opacity:.75;margin-top:8px}
+  .now.empty{background:#fff;color:var(--ink2);border:1px dashed var(--line)}
+  .ent{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .ent:last-child{border-bottom:1px solid var(--line)}
+  .ent .d{font-size:13px;color:var(--ink2);line-height:1.35}
+  .ent .d b{display:block;font-size:17px;color:var(--ink)}
+  .ent .pg{font-weight:600}
+  .ent .hwline{display:inline-block;margin-top:6px;background:var(--hwbg);color:var(--hw);border-radius:8px;padding:3px 10px;font-size:14px}
+  .ent .nt{font-size:14px;color:var(--ink2);margin-top:6px;white-space:pre-wrap}
+  .ent .del{background:none;border:0;color:var(--ink2);font-size:12px;padding:6px 0 0;text-decoration:underline}
+  .ent .per{font-size:12px;color:var(--ink2)}
+  .none{color:var(--ink2);font-size:14px;padding:16px 0}
+  .hint{font-size:13px;color:var(--ink2);margin-bottom:10px}
+
+  .cal-banner{border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:15px;font-weight:600;background:#fff;border:1px solid var(--line)}
+  .cal-banner.holiday{background:#EEF0F7;color:#3E4A7A;border-color:#C9CFE6}
+  .cal-banner.noclass{background:var(--hwbg);color:var(--hw);border-color:#EBCBB8}
+  .link{border:0;background:none;color:var(--board);text-decoration:underline;font-size:13px;padding:6px}
+  .month{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-bottom:14px}
+  .mh{font-weight:700;font-size:16px;margin-bottom:8px}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .wk{font-size:11px;color:var(--ink2);text-align:center;padding-bottom:2px}
+  .day{border:1px solid transparent;background:none;border-radius:8px;padding:7px 0;font-size:14px;color:var(--ink);position:relative}
+  .day.holiday{background:#EEF0F7;color:#7A82A8}
+  .day.noclass{background:var(--hwbg);color:var(--hw)}
+  .day.ev::after{content:"";position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--board)}
+  .day.ov{border-color:var(--board)}
+  .day.today{outline:2px solid var(--board);font-weight:700}
+  .mlist{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+  .mi{font-size:13px;padding:3px 0;display:grid;grid-template-columns:62px 1fr;gap:6px;color:var(--ink)}
+  .mi span{color:var(--ink2)}
+  .mi.holiday{color:#3E4A7A}.mi.noclass{color:var(--hw)}.mi.ov{color:var(--board)}
+  .roster{margin-top:8px;border-top:1px solid var(--line);padding-top:8px}
+  .rh{font-size:13px;color:var(--ink2);display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+  .rh input{flex:1;min-width:120px;margin:0;padding:6px 9px;font-size:14px}
+  .stu{display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #EEF0EC}
+  .stu .no,.stuRow .no{font-size:12px;color:var(--ink2)}
+  .stu .nm{font-size:15px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:13px;color:var(--ink2)}
+  .chip.on{background:var(--hw);border-color:var(--hw);color:#fff}
+  .chip.nb.on{background:#5B6675;border-color:#5B6675}
+  .stu .sc{width:64px;margin:0;padding:6px 8px;font-size:14px;text-align:center;grid-column:3}
+  .sec{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+  .secH{font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .scorebox{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:8px}
+  .scorebox input{margin-top:0}
+  .stuHead,.stuRow{display:grid;grid-template-columns:28px 1fr 60px 56px;gap:4px;align-items:center;font-size:14px;padding:6px 0;border-bottom:1px solid #EEF0EC}
+  .stuHead{font-size:12px;color:var(--ink2)}
+  .stuRow{cursor:pointer}.stuRow.quiet{color:var(--ink2)}
+  .stuRow .bad{color:var(--hw);font-weight:600}
+  .stuD{background:var(--paper);border-radius:8px;padding:6px 10px;margin:4px 0}
+  .stuL{font-size:13px;display:grid;grid-template-columns:44px 1fr auto;gap:6px;padding:3px 0}
+  .stuL span{color:var(--ink2)}
+  dialog{border:0;border-radius:14px;padding:16px;width:min(92vw,560px);color:var(--ink)}
+  dialog::backdrop{background:rgba(30,42,58,.45)}
+  dialog h3{margin:0 0 8px;font-size:16px}
+  dialog p{font-size:13px;color:var(--ink2);margin:0 0 8px}
+  dialog textarea{width:100%;min-height:200px;font-family:ui-monospace,Menlo,monospace;font-size:12px;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .dbtn{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .dbtn button{flex:1 1 calc(50% - 4px);min-width:0;padding:12px 8px;border-radius:10px;border:1px solid var(--line);background:#fff;font:inherit;white-space:nowrap}
+  .dbtn button.wide{flex:1 1 100%}
+  .dbtn button.danger{color:var(--hw);border-color:#E3C3B1}
+  .dbtn button.p{background:var(--board);color:#fff;border-color:var(--board)}
+  .sync{display:flex;align-items:center;gap:8px;margin:0 16px 9px;padding:6px 10px;font-size:12px;color:var(--ink2);background:#ECEFEA;border-radius:8px}
+  .sync .dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:none}
+  .sync.ok .dot{background:var(--ok)}.sync.busy .dot{background:#C9A227}.sync.err .dot{background:var(--hw)}
+  .sync #syncMsg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sync button#updBtn{background:var(--hw);border-color:var(--hw);color:#fff;font-weight:600}
+  .sync button{background:#fff;border:1px solid var(--line);color:var(--board);font:inherit;font-size:12px;padding:4px 10px;border-radius:6px;flex:none}
+  .duebox{background:var(--hwbg);border:1px solid #EBD4C4;border-radius:14px;padding:12px 14px;margin-bottom:16px}
+  .dueH{font-weight:600;font-size:15px;color:var(--hw);margin-bottom:8px}
+  .dueRow{display:grid;grid-template-columns:46px 1fr;gap:8px;align-items:baseline;padding:8px 0;border-top:1px solid #EBD4C4}
+  .dueRow:first-of-type{border-top:0}
+  .dueRow .dc{font-weight:600;font-size:15px;color:var(--ink)}
+  .dueRow .dh{font-size:14px;color:var(--ink)}
+  .dueRow .dm{font-size:12px;color:var(--ink2);margin-top:2px}
+  .duefoot{font-size:12px;color:var(--ink2);margin-top:8px}
+  .pw{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .pw .lp{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--line);margin-bottom:6px}
+  .pw .pbtn{background:#fff;border:1px solid var(--board);color:var(--board);font:inherit;font-size:14px;padding:9px 16px;border-radius:9px;margin-right:8px}
+  .pw .pbtn.del{color:var(--hw);border-color:#E3C3B1}
+  .pw .tag{display:block;margin-top:6px}
+  .pw .tag{font-size:12px;color:var(--ink2)}
+  .photo{display:block;margin-top:6px}
+  .photo img{max-width:100%;max-height:240px;border-radius:10px;border:1px solid var(--line);display:block}
+  .cfgbtn{display:block;width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:var(--board);color:#fff;font:inherit;font-size:15px}
+  .noroster{background:var(--hwbg);border:1px solid #EBD4C4;border-radius:10px;padding:10px 12px;font-size:13px;color:var(--hw);margin:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><h1>教學進度紀錄</h1><button id="dataBtn">匯出／匯入</button></div>
+  <div class="views"><button id="vToday" class="on">今日課堂</button><button id="vClass">逐班紀錄</button><button id="vCal">校曆</button></div>
+  <div class="sync" id="syncBar"><span class="dot"></span><span id="syncMsg">準備同步…</span><button id="updBtn" hidden>更新版本</button><button id="syncBtn">立即同步</button></div>
+</header>
+<main>
+  <section id="today"></section>
+  <section id="class" hidden></section>
+  <section id="cal" hidden></section>
+</main>
+
+<input type="file" id="cfgFile" style="display:none">
+<input type="file" id="phFile" accept="image/*" style="display:none">
+<dialog id="dlg">
+  <h3>匯出／匯入 JSON<span style="float:right;font-size:11px;color:var(--ink2);font-weight:400">版本 v11</span></h3>
+  <p>課堂進度會自動由雲端同步落嚟。呢度用嚟備份，或者一次過覆蓋全部資料。<b>時間表、校曆、學生名單只存喺你部機</b>，換機／清咗 cache 要喺呢度貼返設定檔再撳「匯入設定」。</p>
+  <textarea id="json"></textarea>
+    <div class="dbtn">
+    <button id="pick" class="p wide">揀設定檔（換機時用）</button>
+    <button id="copy">複製紀錄</button>
+    <button id="dl">下載備份</button>
+    <button id="impR">貼上設定</button>
+    <button id="imp">覆蓋紀錄</button>
+    <button id="wipe" class="wide danger">清除全部紀錄（重新開始）</button>
+    <button id="close" class="wide">關閉</button>
+  </div>
+</dialog>
+
+<script>
+let CLASSES=[];
+const KEY="teach-progress-v1";
+const store={
+  async get(k){if(window.storage)return window.storage.get(k,false);const v=localStorage.getItem(k);return v==null?null:{key:k,value:v}},
+  async set(k,v){if(window.storage)return window.storage.set(k,v,false);localStorage.setItem(k,v);return{key:k,value:v}}
+};
+let PT={};
+// 星期一=1 … 星期五=5；每項 [節, 班, 課室]
+let TT={};
+// 指定改用其他星期時間表的日子
+let OVERRIDE={};
+function ttDay(iso){return OVERRIDE[iso]??wdn(iso)}
+// 校曆格式。type：holiday 假期；noclass 無正常課堂（測考、對卷、教師發展日、運動會等）；event 當日活動（照常上課）
+let CAL=[];
+function calAt(iso){return CAL.filter(e=>iso>=e[0]&&iso<=e[1])}
+function dayStatus(iso){const ev=calAt(iso);if(ev.some(e=>e[3]==="holiday"))return"holiday";if(OVERRIDE[iso])return"normal";if(ev.some(e=>e[3]==="noclass"))return"noclass";return"normal"}
+let ROSTER={};
+const SKEY="teach-school-v1";
+let data={};
+let rec={};   // 學生記錄：{ts,date,num,type:"miss"|"nobook"|"score",hw,score,note}
+let open_={};  // 展開狀態
+let cur="", view="today", day=todayISO();
+function initClasses(){
+  for(const c of CLASSES){
+    if(!Array.isArray(data[c]))data[c]=[];
+    if(!Array.isArray(rec[c]))rec[c]=[];
+    if(!Array.isArray(ROSTER[c]))ROSTER[c]=[];
+  }
+  if(!cur||!CLASSES.includes(cur))cur=CLASSES[0]||"";
+}
+function applySchool(d){
+  if(Array.isArray(d.classes)&&d.classes.length)CLASSES=d.classes.map(String);
+  if(d.pt&&typeof d.pt==="object")PT=d.pt;
+  if(d.tt&&typeof d.tt==="object")TT=d.tt;
+  if(d.override&&typeof d.override==="object")OVERRIDE=d.override;
+  if(Array.isArray(d.cal))CAL=d.cal;
+  if(d.roster&&typeof d.roster==="object"){ROSTER={};
+    for(const c in d.roster)if(Array.isArray(d.roster[c]))ROSTER[c]=d.roster[c].map(x=>[+x[0],String(x[1])]);}
+  initClasses();
+}
+
+function todayISO(){return new Date().toLocaleDateString("en-CA")}
+function addDays(iso,n){const d=new Date(iso+"T00:00:00");d.setDate(d.getDate()+n);return d.toLocaleDateString("en-CA")}
+const wdn=iso=>new Date(iso+"T00:00:00").getDay();
+const wd=iso=>iso?"日一二三四五六"[wdn(iso)]:"";
+const fmt=iso=>{if(!iso)return"";const [y,m,d]=iso.split("-");return `${+m}/${+d}`};
+const esc=s=>String(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+function daysBetween(a,b){return Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/864e5)}
+function ago(iso,ref){const n=daysBetween(iso,ref);if(n===0)return"今日";if(n===1)return"琴日";if(n>1)return`${n} 日前`;return`${-n} 日後`}
+function nextLesson(cls,fromISO){for(let i=1;i<=60;i++){const d=addDays(fromISO,i);if(dayStatus(d)!=="normal")continue;const hit=(TT[ttDay(d)]||[]).find(x=>x[1]===cls);if(hit)return{date:d,period:hit[0]}}return null}
+function sorted(cls){return[...data[cls]].sort((a,b)=>b.date.localeCompare(a.date)||(b.period||0)-(a.period||0)||b.ts-a.ts)}
+function lastBefore(cls,iso,period){return sorted(cls).find(e=>e.date<iso||(e.date===iso&&period&&(e.period||0)<period))||null}
+function lastHw(cls,iso){const e=sorted(cls).find(x=>x.hw&&x.date<=iso);return e?e.hw:""}
+function recOn(cls,iso,num,type){return rec[cls].find(r=>r.date===iso&&r.num===num&&r.type===type)}
+async function toggleRec(cls,iso,num,type,hw){const r=recOn(cls,iso,num,type);if(r)rec[cls]=rec[cls].filter(x=>x!==r);else rec[cls].push({ts:Date.now(),date:iso,num,type,hw:hw||"",score:null,note:""});await save()}
+function hwNames(cls){const n=new Set();data[cls].forEach(e=>{if(e.hw)n.add(e.hw)});rec[cls].forEach(r=>{if(r.hw)n.add(r.hw)});return[...n]}
+async function loadSchool(){
+  try{const r=await store.get(SKEY);if(r&&r.value)applySchool(JSON.parse(r.value));}catch(e){}
+  initClasses();
+}
+const SETUP=`<div class="noroster"><b>未載入學校設定</b><br><br>
+時間表、課室、校曆同班別名單全部只存喺你部機，唔會放上網，所以每部機要載入一次。<br><br>
+喺電腦 AirDrop <b>school-local.json</b> 落呢部機，然後撳下面個掣，揀「瀏覽」入面嗰個檔。<br>
+<button id="setupPick" class="cfgbtn">揀設定檔</button></div>`;
+const NOROSTER=`<div class="noroster">未載入學生名單。名單只存喺你部機，唔會上網。撳右上角「匯出／匯入」，貼上名單再撳「匯入名單」。</div>`;
+function rosterPanel(cls,iso,hw){
+  if(!ROSTER[cls].length)return `<div class="roster">${NOROSTER}</div>`;
+  return `<div class="roster"><div class="rh">${fmt(iso)} 課堂登記：無帶書</div>
+  ${ROSTER[cls].map(([n,name])=>{const b=recOn(cls,iso,n,"nobook");
+    return `<div class="stu"><span class="no">${n}</span><span class="nm">${esc(name)}</span>
+    <button class="chip nb${b?" on":""}" data-n="${n}" data-t="nobook">無帶書</button></div>`}).join("")}</div>`}
+function bindRoster(box,cls,iso){box.querySelectorAll(".chip").forEach(b=>b.onclick=async()=>{
+  await toggleRec(cls,iso,+b.dataset.n,b.dataset.t,"");b.classList.toggle("on");})}
+function entryAt(cls,iso,period){return data[cls].find(e=>e.date===iso&&(e.period||0)===period)||null}
+
+async function load(){
+  try{const r=await store.get(KEY);if(r&&r.value){const d=JSON.parse(r.value);for(const c of CLASSES){if(Array.isArray(d[c]))data[c]=d[c];if(d._rec&&Array.isArray(d._rec[c]))rec[c]=d._rec[c];}}}catch(e){}
+  render();
+}
+let _db=null;
+function idb(){return _db||(_db=new Promise((res,rej)=>{
+  const q=indexedDB.open("teach-photos",1);
+  q.onupgradeneeded=()=>{q.result.createObjectStore("p")};
+  q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);
+}))}
+function pkey(c,date,period){return c+"|"+date+"|"+(period||0)}
+async function photoPut(k,b){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction("p","readwrite");t.objectStore("p").put(b,k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+async function photoGet(k){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction("p","readonly");const r=t.objectStore("p").get(k);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)})}
+async function photoDel(k){const db=await idb();return new Promise((res,rej)=>{const t=db.transaction("p","readwrite");t.objectStore("p").delete(k);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+async function shrink(file){
+  const max=1000;
+  let bmp=null;
+  try{bmp=await createImageBitmap(file)}catch(e){
+    bmp=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
+  }
+  let w=bmp.width,h=bmp.height;
+  const sc=Math.min(1,max/Math.max(w,h));
+  w=Math.max(1,Math.round(w*sc));h=Math.max(1,Math.round(h*sc));
+  const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+  cv.getContext("2d").drawImage(bmp,0,0,w,h);
+  const b=await new Promise(r=>cv.toBlob(r,"image/jpeg",0.65));
+  return b||file;
+}
+const _urls=[];
+async function hydratePhotos(){
+  while(_urls.length)URL.revokeObjectURL(_urls.pop());
+  for(const el of document.querySelectorAll("[data-photo]")){
+    try{const b=await photoGet(el.dataset.photo);
+      if(b){const u=URL.createObjectURL(b);_urls.push(u);el.src=u;el.hidden=false}
+      else el.hidden=true;
+    }catch(e){el.hidden=true}
+  }
+}
+function photoBlock(c,e,date,period){
+  const k=pkey(c,date,period), has=!!(e&&e.photo);
+  return `<div class="pw">${has?`<img class="lp" data-photo="${k}" alt="課堂相片">`:""}
+    <button class="pbtn addph">${has?"換相":"＋ 加相"}</button>
+    ${has?`<button class="pbtn del delph">刪相</button>`:""}
+    <div class="tag">相片只存喺呢部機，唔會上網</div></div>`;
+}
+function photoH(e){return e&&e.img?`<a class="photo" href="${esc(e.img)}" target="_blank" rel="noopener"><img src="${esc(e.img)}" alt="課堂相片" loading="lazy"></a>`:""}
+const BUILD="v11";   // 由 bump.py 維護，同 data.json 嘅 _build 對齊
+const CKEY="teach-cloud-v1";
+let cloudState={applied:{},at:0};
+async function loadCloud(){try{const r=await store.get(CKEY);if(r&&r.value){const d=JSON.parse(r.value);cloudState={applied:d.applied||{},at:d.at||0}}}catch(e){}}
+async function saveCloud(){try{await store.set(CKEY,JSON.stringify(cloudState))}catch(e){}}
+function hhmm(t){const d=new Date(t);return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`}
+function syncUI(cls,msg){const b=document.getElementById("syncBar");if(!b)return;b.className="sync"+(cls?" "+cls:"");document.getElementById("syncMsg").textContent=msg}
+let needUpdate=false;
+async function doUpdate(){
+  try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
+  try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}}catch(e){}
+  location.replace(location.pathname+"?u="+Date.now());
+}
+let syncing=false;
+async function syncCloud(){
+  if(syncing)return;
+  if(!CLASSES.length){syncUI("","未匯入學校設定，暫停同步");return}   // 未設定就唔好郁本機資料
+  syncing=true; syncUI("busy","同步緊…");
+  let cd;
+  try{const r=await fetch("data.json?t="+Date.now(),{cache:"no-store"});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    cd=await r.json();}
+  catch(err){syncing=false;
+    syncUI("err",navigator.onLine?"同步唔到，稍後自動再試":"離線中，用緊本機紀錄"+(cloudState.at?"　上次 "+hhmm(cloudState.at):""));return}
+  if(cd._build&&cd._build!==BUILD){needUpdate=true;const ub=document.getElementById("updBtn");if(ub)ub.hidden=false}
+  let add=0,upd=0,del=0;
+  for(const c of CLASSES){
+    const arr=Array.isArray(cd[c])?cd[c]:[];
+    for(const x of arr){
+      const e={ts:+x.ts||0,date:x.date||"",period:x.period?+x.period:0,page:x.page||"",topic:x.topic||"",
+               hw:x.hw||"",due:x.due||"",note:x.note||"",img:x.img||""};
+      if(!e.date)continue;
+      const k=`${c}|${e.date}|${e.period}`, sig=e.ts+(x.del?"d":"");
+      if(cloudState.applied[k]===sig)continue;
+      const old=entryAt(c,e.date,e.period);
+      if(x.del){if(old){data[c]=data[c].filter(y=>y!==old);del++;
+        if(old.photo){try{await photoDel(pkey(c,old.date,old.period))}catch(_){}}}}
+      else if(old){
+        if((+old.ts||0)>e.ts){cloudState.applied[k]=sig;continue}
+        if(old.photo)e.photo=1;
+        data[c]=data[c].filter(y=>y!==old);data[c].push(e);upd++;
+      }else{data[c].push(e);add++}
+      cloudState.applied[k]=sig;
+    }
+  }
+  cloudState.at=Date.now();
+  await save();await saveCloud();
+  syncing=false;
+  const n=add+upd+del;
+  if(n){
+    const typing=document.activeElement&&/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+    if(!typing)render();
+    syncUI("ok",`已更新　新增 ${add}${upd?`、修改 ${upd}`:""}${del?`、刪除 ${del}`:""}`);
+  }else syncUI("ok",needUpdate?"有新版本，撳右邊更新":"已同步　"+hhmm(cloudState.at));
+}
+async function save(){if(!CLASSES.length)return false;   // 保險：未設定唔准寫，免得清走舊紀錄
+  try{await store.set(KEY,JSON.stringify({...data,_rec:rec}));return true}catch(e){console.error(e);return false}}
+
+function render(){
+  if(!CLASSES.length){
+    const t=document.getElementById("today");
+    t.innerHTML=SETUP;t.hidden=false;
+    document.getElementById("class").hidden=true;
+    document.getElementById("cal").hidden=true;
+    const sp=t.querySelector("#setupPick");
+    if(sp)sp.onclick=()=>document.getElementById("cfgFile").click();
+    return;
+  }
+  view==="today"?renderToday():view==="class"?renderClass():renderCal();
+  document.getElementById("vCal").classList.toggle("on",view==="cal");
+  document.getElementById("cal").hidden=view!=="cal";
+  document.getElementById("vToday").classList.toggle("on",view==="today");
+  document.getElementById("vClass").classList.toggle("on",view==="class");
+  document.getElementById("today").hidden=view!=="today";
+  document.getElementById("class").hidden=view!=="class";
+  hydratePhotos();}
+
+function renderToday(){
+  const el=document.getElementById("today");
+  const lessons=TT[ttDay(day)]||[];
+  const isToday=day===todayISO();
+  const ov=OVERRIDE[day]?`　改用星期${"日一二三四五六"[OVERRIDE[day]]}時間表`:"";
+  let h=`<div class="daynav"><button id="prev" aria-label="前一日">‹</button>
+    <div class="d">${fmt(day)}<small>星期${wd(day)}${isToday?"　今日":""}${ov}</small></div>
+    <div style="display:flex;gap:6px">${isToday?"":`<button id="goToday" class="today">返回今日</button>`}<button id="next" aria-label="後一日">›</button></div></div>`;
+  const evs=calAt(day),st=dayStatus(day);
+  if(evs.length)h+=`<div class="cal-banner ${st}">${evs.map(e=>esc(e[2])).join("<br>")}</div>`;
+  const showLessons=st==="normal"||window.__force===day;
+  if(st==="holiday")h+=``;
+  else if(st==="noclass"&&!showLessons)h+=`<div class="free">當日無正常課堂 <button id="force" class="link">仍要顯示時間表課堂</button></div>`;
+  else if(!lessons.length)h+=`<div class="free">呢日冇堂</div>`;
+  if(showLessons&&st!=="holiday")lessons.forEach(([p,c,room])=>{
+    const saved=entryAt(c,day,p);
+    const last=lastBefore(c,day,p);
+    let lastH;
+    if(!last)lastH=`<div class="last none">${c} 未有紀錄</div>`;
+    else lastH=`<div class="last"><div class="ago">上次 ${ago(last.date,day)}（${fmt(last.date)} ${wd(last.date)}${last.period?" 第"+last.period+"節":""}）</div>
+      <span class="pg">${esc(last.page)}</span>${last.page&&last.topic?"　":""}${esc(last.topic)}
+      ${last.hw?`<div class="hwl">功課：${esc(last.hw)}${last.due?`　${fmt(last.due)} 交`:""}</div>`:""}
+      ${last.note?`<div style="color:var(--ink2);font-size:13px">${esc(last.note)}</div>`:""}
+      ${photoH(last)}
+      ${last.photo?`<img class="lp" data-photo="${pkey(c,last.date,last.period)}" alt="課堂相片" style="max-width:100%;max-height:200px;border-radius:10px;border:1px solid var(--line);margin-top:6px;display:block">`:""}</div>`;
+    const v=k=>esc(saved?saved[k]:"");
+    h+=`<div class="lesson${saved?" done":""}" data-c="${c}" data-p="${p}">
+      <div class="lh"><div class="p"><b>${p}</b>${PT[p]}</div><div class="c">${c}<small>${room}</small></div>${saved?`<span class="st">已記錄</span>`:""}</div>
+      ${lastH}
+      <div class="lf">
+        <div class="r2"><input name="page" placeholder="今日教到（頁數）" value="${v("page")}"><input name="topic" placeholder="課題" value="${v("topic")}"></div>
+        <div class="r2"><input name="hw" placeholder="功課" value="${v("hw")}"><input name="due" type="date" value="${v("due")}"></div>
+        <textarea name="note" placeholder="備註">${v("note")}</textarea>
+        <div class="act"><button class="save">${saved?"更新":"儲存"}</button>${saved?`<button class="clr">刪除呢堂紀錄</button>`:""}</div>
+        <div class="msg"></div>
+        ${photoBlock(c,saved,day,p)}
+        <button class="link tog">${open_[c+day]?"收起課堂登記":"課堂登記：無帶書"}</button>
+        ${open_[c+day]?rosterPanel(c,day,lastHw(c,day)):""}
+      </div></div>`;
+  });
+  // 當日要交、但當日冇堂嘅班別
+  const hasLesson=new Set((showLessons&&st!=="holiday")?lessons.map(x=>x[1]):[]);
+  const dues=[];
+  for(const c of CLASSES){
+    if(hasLesson.has(c))continue;
+    for(const e of data[c])if(e.due===day&&e.hw)dues.push({c,e});
+  }
+  dues.sort((a,b)=>CLASSES.indexOf(a.c)-CLASSES.indexOf(b.c)||a.e.date.localeCompare(b.e.date));
+  if(dues.length){
+    h+=`<div class="duebox"><div class="dueH">今日要交功課　${dues.length} 班（當日冇堂）</div>`;
+    for(const {c,e} of dues){
+      const nx=nextLesson(c,day);
+      h+=`<div class="dueRow" data-c="${c}"><span class="dc">${c}</span><span>
+        <span class="dh">${esc(e.hw)}</span>
+        <div class="dm">${fmt(e.date)}（${wd(e.date)}）派　${nx?`下堂 ${fmt(nx.date)}（${wd(nx.date)}）第${nx.period}節`:"未有下一堂"}</div>
+      </span></div>`;
+    }
+    h+=`<div class="duefoot">撳一下可以跳去嗰班嘅紀錄。</div></div>`;
+  }
+  el.innerHTML=h;
+  el.querySelectorAll(".dueRow").forEach(r=>r.onclick=()=>{cur=r.dataset.c;view="class";render();window.scrollTo({top:0})});
+  const g=id=>document.getElementById(id);
+  g("prev").onclick=()=>{day=addDays(day,-1);renderToday()};
+  g("next").onclick=()=>{day=addDays(day,1);renderToday()};
+  if(g("goToday"))g("goToday").onclick=()=>{day=todayISO();renderToday()};
+  if(g("force"))g("force").onclick=()=>{window.__force=day;renderToday()};
+  el.querySelectorAll(".lesson").forEach(box=>{
+    const c=box.dataset.c,p=+box.dataset.p;
+    const val=n=>box.querySelector(`[name=${n}]`).value.trim();
+    box.querySelector(".save").onclick=async()=>{
+      const old=entryAt(c,day,p);
+      const ent={ts:Date.now(),date:day,period:p,page:val("page"),topic:val("topic"),hw:val("hw"),due:val("due"),note:val("note"),img:(old&&old.img)||"",photo:(old&&old.photo)?1:0};
+      if(!ent.page&&!ent.topic){flash(box,"請至少填頁數或課題",true);return}
+      if(old){data[c]=data[c].filter(e=>e!==old)}
+      data[c].push(ent);const ok=await save();
+      renderToday();
+    };
+    box.querySelector(".tog").onclick=()=>{open_[c+day]=!open_[c+day];renderToday()};
+    const ap=box.querySelector(".addph");
+    if(ap)ap.onclick=()=>{
+      pendingPhoto={c,date:day,period:p,page:val("page"),topic:val("topic")};
+      document.getElementById("phFile").click();
+    };
+    const dp=box.querySelector(".delph");
+    if(dp)dp.onclick=async()=>{
+      if(!confirm("刪除呢張相？"))return;
+      try{await photoDel(pkey(c,day,p))}catch(e){}
+      const en=entryAt(c,day,p);if(en){en.photo=0;en.ts=Date.now()}
+      await save();renderToday();
+    };
+    if(open_[c+day])bindRoster(box,c,day);
+    const clr=box.querySelector(".clr");if(clr)clr.onclick=async()=>{if(!confirm(`刪除 ${c} ${fmt(day)} 第${p}節紀錄？`))return;
+      data[c]=data[c].filter(e=>!(e.date===day&&(e.period||0)===p));
+      try{await photoDel(pkey(c,day,p))}catch(e){}
+      await save();renderToday()};
+  });
+}
+function flash(box,t,err){const m=box.querySelector(".msg");m.textContent=t;m.style.color=err?"var(--hw)":"";setTimeout(()=>{if(m.textContent===t)m.textContent=""},2500)}
+
+function renderClass(){
+  const el=document.getElementById("class");
+  const list=sorted(cur);const l=list[0];const nx=nextLesson(cur,todayISO());
+  let h=`<div class="tabs">${CLASSES.map(c=>`<button class="tab${c===cur?" on":""}" data-c="${c}">${c}<small>${data[c].length}</small></button>`).join("")}</div>`;
+  if(!l)h+=`<div class="now empty">${cur} 未有紀錄。喺「今日課堂」入面記錄。</div>`;
+  else h+=`<div class="now"><div class="cls">${cur} 最新進度　${fmt(l.date)}（${wd(l.date)}）${ago(l.date,todayISO())}</div>
+    <div class="page">${esc(l.page)||"—"}</div><div>${esc(l.topic)}</div>
+    ${l.hw?`<div class="hw">功課：<b>${esc(l.hw)}</b>${l.due?`　${fmt(l.due)}（${wd(l.due)}）交`:""}</div>`:`<div class="hw" style="opacity:.6">上堂冇派功課</div>`}
+    ${nx?`<div class="next">下堂：${fmt(nx.date)}（${wd(nx.date)}）第${nx.period}節</div>`:""}</div>`;
+  // 學生一覽
+  const rs=rec[cur];
+  h+=`<div class="sec"><div class="secH">學生記錄 <button class="link" id="scoreBtn">${open_["score"+cur]?"收起入分":"入功課分數"}</button></div>`;
+  if(open_["score"+cur]&&!ROSTER[cur].length)h+=NOROSTER;
+  else if(open_["score"+cur]){
+    const names=hwNames(cur);
+    h+=`<div class="scorebox"><div class="r2"><input id="scHw" list="hwlist" placeholder="功課名稱" value="${esc(open_["scHw"+cur]||lastHw(cur,todayISO()))}"><input id="scDate" type="date" value="${todayISO()}"></div>
+      <datalist id="hwlist">${names.map(n=>`<option value="${esc(n)}">`).join("")}</datalist>
+      ${ROSTER[cur].map(([n,name])=>`<div class="stu"><span class="no">${n}</span><span class="nm">${esc(name)}</span><input class="sc" data-n="${n}" inputmode="decimal" placeholder="分"></div>`).join("")}
+      <div class="act"><button class="save" id="scSave">儲存分數</button></div><div class="msg" id="scMsg"></div></div>`;
+  }
+  if(!ROSTER[cur].length)h+=NOROSTER;
+  h+=`<div class="stuT"><div class="stuHead"><span></span><span>姓名</span><span>無帶書</span><span>平均分</span></div>`;
+  for(const [n,name] of ROSTER[cur]){const mine=rs.filter(r=>r.num===n);const miss=mine.filter(r=>r.type==="miss"),nb=mine.filter(r=>r.type==="nobook"),sc=mine.filter(r=>r.type==="score"&&r.score!=null);
+    const avg=sc.length?(sc.reduce((a,r)=>a+r.score,0)/sc.length).toFixed(1):"";
+    const k="stu"+cur+n;
+    h+=`<div class="stuRow${mine.length?"":" quiet"}" data-k="${k}"><span class="no">${n}</span><span class="nm">${esc(name)}</span><span class="${nb.length?"bad":""}">${nb.length||""}</span><span>${avg}</span></div>`;
+    if(open_[k])h+=`<div class="stuD">${mine.length?[...mine].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<div class="stuL"><span>${fmt(r.date)}</span>${r.type==="miss"?`欠交${r.hw?"：":""}${esc(r.hw)}`:r.type==="nobook"?"無帶書":`${esc(r.hw)}：${r.score} 分`}<button class="del rdel" data-ts="${r.ts}">刪除</button></div>`).join(""):`<div class="stuL">未有記錄</div>`}</div>`;
+  }
+  h+=`</div></div>`;
+  h+=`<div class="hint">${cur} 全部紀錄（新至舊）</div>`;
+  h+=list.length?list.map(e=>`<div class="ent"><div class="d"><b>${fmt(e.date)}</b>星期${wd(e.date)}${e.period?`<span class="per"> 第${e.period}節</span>`:""}</div>
+    <div><span class="pg">${esc(e.page)}</span>${e.page&&e.topic?"　":""}${esc(e.topic)}
+    ${e.hw?`<br><span class="hwline">${esc(e.hw)}${e.due?`　${fmt(e.due)} 交`:""}</span>`:""}
+    ${e.note?`<div class="nt">${esc(e.note)}</div>`:""}
+    ${photoH(e)}
+    ${e.photo?`<img class="lp" data-photo="${pkey(cur,e.date,e.period)}" alt="課堂相片" style="max-width:100%;max-height:200px;border-radius:10px;border:1px solid var(--line);margin-top:6px;display:block">`:""}
+    <button class="del" data-ts="${e.ts}">刪除</button></div></div>`).join(""):`<div class="none">暫無紀錄</div>`;
+  el.innerHTML=h;
+  el.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{cur=b.dataset.c;renderClass();window.scrollTo({top:0})});
+  el.querySelectorAll(".stuRow").forEach(r=>r.onclick=()=>{open_[r.dataset.k]=!open_[r.dataset.k];renderClass()});
+  el.querySelectorAll(".rdel").forEach(b=>b.onclick=async e=>{e.stopPropagation();rec[cur]=rec[cur].filter(x=>String(x.ts)!==b.dataset.ts);await save();renderClass()});
+  const sb=el.querySelector("#scoreBtn");if(sb)sb.onclick=()=>{open_["score"+cur]=!open_["score"+cur];renderClass()};
+  const ss=el.querySelector("#scSave");if(ss)ss.onclick=async()=>{
+    const hw=el.querySelector("#scHw").value.trim(),d=el.querySelector("#scDate").value;const m=el.querySelector("#scMsg");
+    if(!hw){m.textContent="請填功課名稱";m.style.color="var(--hw)";return}
+    let n=0;el.querySelectorAll(".sc").forEach(i=>{const v=i.value.trim();if(v==="")return;const num=+i.dataset.n;
+      rec[cur]=rec[cur].filter(r=>!(r.type==="score"&&r.num===num&&r.hw===hw));rec[cur].push({ts:Date.now()+num,date:d,num,type:"score",hw,score:parseFloat(v),note:""});n++});
+    open_["scHw"+cur]=hw;await save();open_["score"+cur]=false;renderClass();
+  };
+  el.querySelector("#scHw")?.addEventListener("input",e=>open_["scHw"+cur]=e.target.value);
+  el.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{if(!confirm("刪除呢條紀錄？"))return;
+    const gone=data[cur].find(x=>String(x.ts)===b.dataset.ts);
+    data[cur]=data[cur].filter(x=>String(x.ts)!==b.dataset.ts);
+    if(gone&&gone.photo){try{await photoDel(pkey(cur,gone.date,gone.period))}catch(e){}}
+    await save();renderClass()});
+}
+
+document.getElementById("vToday").onclick=()=>{view="today";render()};
+document.getElementById("vClass").onclick=()=>{view="class";render()};
+document.getElementById("vCal").onclick=()=>{view="cal";render()};
+
+function renderCal(){
+  const el=document.getElementById("cal");const t=todayISO();let h=`<div class="hint">校曆表。撳日期可跳到該日課堂。</div>`;
+  const months=[[2026,9],[2026,10],[2026,11],[2026,12],[2027,1],[2027,2],[2027,3],[2027,4],[2027,5],[2027,6],[2027,7],[2027,8]];
+  for(const [y,m] of months){
+    const first=new Date(y,m-1,1),n=new Date(y,m,0).getDate();
+    h+=`<div class="month" id="m${y}${m}"><div class="mh">${y} 年 ${m} 月</div><div class="grid">${"日一二三四五六".split("").map(w=>`<div class="wk">${w}</div>`).join("")}`;
+    for(let i=0;i<first.getDay();i++)h+=`<div></div>`;
+    for(let d=1;d<=n;d++){const iso=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;const st=dayStatus(iso);const ev=calAt(iso);
+      const cls=[st,iso===t?"today":"",ev.some(e=>e[3]==="event")?"ev":"",OVERRIDE[iso]?"ov":""].join(" ");
+      h+=`<button class="day ${cls}" data-d="${iso}">${d}</button>`}
+    h+=`</div><div class="mlist">`;
+    const seen=new Set();
+    for(let d=1;d<=n;d++){const iso=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      for(const e of calAt(iso)){if(seen.has(e))continue;seen.add(e);
+        const a=e[0].slice(5).replace("-","/").replace(/^0/,"").replace("/0","/"),b=e[1].slice(5).replace("-","/").replace(/^0/,"").replace("/0","/");
+        h+=`<div class="mi ${e[3]}"><span>${a===b?a:a+"–"+b}</span>${esc(e[2])}</div>`}
+      if(OVERRIDE[iso])h+=`<div class="mi ov"><span>${iso.slice(5).replace("-","/").replace(/^0/,"").replace("/0","/")}</span>上星期五時間表</div>`}
+    h+=`</div></div>`;
+  }
+  el.innerHTML=h;
+  el.querySelectorAll(".day").forEach(b=>b.onclick=()=>{day=b.dataset.d;view="today";render();window.scrollTo({top:0})});
+  const cur=el.querySelector(`#m${+t.slice(0,4)}${+t.slice(5,7)}`);if(cur)cur.scrollIntoView({block:"start"});
+}
+
+const dlg=document.getElementById("dlg"),ta=document.getElementById("json");
+document.getElementById("dataBtn").onclick=()=>{ta.value=JSON.stringify({...data,_rec:rec},null,2);dlg.showModal()};
+document.getElementById("close").onclick=()=>dlg.close();
+document.getElementById("dl").onclick=()=>{const b=new Blob([JSON.stringify({...data,_rec:rec},null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=`教學進度_${todayISO()}.json`;a.click()};
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("sw.js").catch(()=>{});
+document.getElementById("copy").onclick=async()=>{ta.select();try{await navigator.clipboard.writeText(ta.value)}catch(e){document.execCommand("copy")}const b=document.getElementById("copy");b.textContent="已複製";setTimeout(()=>b.textContent="複製",1500)};
+async function useSchool(d){
+  if(!d||!Array.isArray(d.classes)||!d.classes.length){alert("入面搵唔到學校設定（要有 classes 一欄）。");return false}
+  await store.set(SKEY,JSON.stringify(d));
+  applySchool(d);
+  const tot=Object.values(ROSTER).reduce((a,v)=>a+v.length,0);
+  alert(`已載入學校設定：${CLASSES.length} 班、${tot} 位學生。全部只存喺呢部機，唔會上網。`);
+  await load();await syncCloud();
+  return true;
+}
+let pendingPhoto=null;
+const phFile=document.getElementById("phFile");
+phFile.onchange=async()=>{
+  const f=phFile.files&&phFile.files[0], t=pendingPhoto;
+  phFile.value=""; pendingPhoto=null;
+  if(!f||!t)return;
+  try{
+    const b=await shrink(f);
+    await photoPut(pkey(t.c,t.date,t.period),b);
+    let en=entryAt(t.c,t.date,t.period);
+    if(!en){en={ts:Date.now(),date:t.date,period:t.period,page:t.page||"",topic:t.topic||"",hw:"",due:"",note:"",img:""};data[t.c].push(en)}
+    en.photo=1;en.ts=Date.now();
+    await save();render();
+  }catch(err){alert("加相失敗，可能係相太大或者部機冇位。")}
+};
+const cfgFile=document.getElementById("cfgFile");
+document.getElementById("pick").onclick=()=>cfgFile.click();
+cfgFile.onchange=async()=>{
+  const f=cfgFile.files&&cfgFile.files[0];
+  if(!f){return}
+  try{
+    const txt=f.text?await f.text():await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsText(f)});
+    if(await useSchool(JSON.parse(txt))&&dlg.open)dlg.close();
+  }catch(e){alert("讀唔到呢個檔，或者格式有誤。檔名應該係 school-local.json。")}
+  finally{cfgFile.value=""}
+};
+document.getElementById("impR").onclick=async()=>{
+  try{if(await useSchool(JSON.parse(ta.value)))dlg.close();}
+  catch(e){alert("JSON 格式有誤，未有匯入。")}
+};
+document.getElementById("wipe").onclick=async()=>{
+  if(!CLASSES.length){alert("未載入學校設定。");return}
+  if(!confirm("清除全部課堂紀錄、學生記錄同相片？\n\n時間表、校曆、學生名單會保留。\n呢個動作無法還原。"))return;
+  if(!confirm("最後確認：真係全部清走？"))return;
+  for(const c of CLASSES){data[c]=[];rec[c]=[]}
+  try{const db=await idb();await new Promise((res,rej)=>{const t=db.transaction("p","readwrite");t.objectStore("p").clear();t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}catch(e){}
+  open_={};
+  await save();render();dlg.close();
+  alert("已清除。時間表、校曆同名單仲喺度，可以由頭再輸入。");
+};
+document.getElementById("syncBtn").onclick=()=>syncCloud();
+document.getElementById("updBtn").onclick=()=>doUpdate();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-cloudState.at>60000)syncCloud()});
+window.addEventListener("online",()=>syncCloud());
+document.getElementById("imp").onclick=async()=>{
+  try{const d=JSON.parse(ta.value);const nd={};
+    for(const c of CLASSES)nd[c]=Array.isArray(d[c])?d[c].map(x=>({ts:x.ts||Date.now()+Math.random(),date:x.date||"",period:x.period?+x.period:0,page:x.page||"",topic:x.topic||"",hw:x.hw||"",due:x.due||"",note:x.note||"",img:x.img||""})):[];
+    const nr={};for(const c of CLASSES)nr[c]=(d._rec&&Array.isArray(d._rec[c]))?d._rec[c]:[];
+    if(!confirm("覆蓋現有全部資料？"))return;data=nd;rec=nr;await save();render();dlg.close();}
+  catch(e){alert("JSON 格式有誤，未有匯入。")}
+};
+if(location.search.indexOf("u=")>=0)try{history.replaceState({},"",location.pathname)}catch(e){}
+(async()=>{await loadSchool();await loadCloud();await load();await syncCloud();})();
+</script>
+</body>
+</html>
